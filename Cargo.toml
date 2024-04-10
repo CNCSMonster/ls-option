@@ -2,6 +2,10 @@
 name = "ls-option"
 version = "0.1.0"
 edition = "2021"
+authors = ["cncsmonster <cncsmonster@163.com>"]
+description = "a tiny and simple option tools for ls-like functionality"
+license = "MIT"
+repository = "https://github.com/cncsmonster/ls-option"
 
 [lib]
 path = "src/lib.rs"
