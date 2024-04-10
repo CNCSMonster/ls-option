@@ -1,0 +1,14 @@
+[package]
+name = "ls-option"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[example]]
+name = "list_all_rs"
+path = "examples/list_all_rs.rs"
+
+
+[dependencies]
