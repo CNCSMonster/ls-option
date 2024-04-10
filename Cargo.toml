@@ -10,9 +10,5 @@ repository = "https://github.com/cncsmonster/ls-option"
 [lib]
 path = "src/lib.rs"
 
-[[example]]
-name = "list_all_rs"
-path = "examples/list_all_rs.rs"
-
 
 [dependencies]
