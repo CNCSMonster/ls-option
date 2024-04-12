@@ -1,6 +1,6 @@
 [package]
 name = "ls-option"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["cncsmonster <cncsmonster@163.com>"]
 description = "a tiny and simple option tools for ls-like functionality"
