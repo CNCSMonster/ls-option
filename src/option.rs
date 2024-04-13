@@ -71,8 +71,11 @@ impl ListOption {
     }
 
     /// add one ext to the list of allowed extensions
+    ///
     /// only files with one of these extensions will be listed
+    ///
     /// e.g. ext("rs") will allow files with .rs extension to be listed
+    ///
     /// e.g. ext("rs").ext("toml") will allow files with .rs and .toml extensions to be listed
     pub fn ext(&mut self, ext: &str) -> Self {
         self.sufs.push(format!(".{}", ext));
@@ -80,21 +83,31 @@ impl ListOption {
     }
 
     /// add multiple exts to the list of allowed extensions
+    ///
     /// only files with one of these extensions will be listed
+    ///
     /// but this function will shadow the previous sufs
+    ///
     /// e.g. exts(vec!["rs", "toml"]) will allow files with .rs and .toml extensions to be listed
+    ///
     /// e.g. exts(vec!["rs"]).exts(vec!["toml"]) will only allow files with .toml extensions to be listed
+    ///
     pub fn exts(&mut self, exts: Vec<&str>) -> Self {
         self.sufs = exts.iter().map(|s| format!(".{}", s)).collect();
         self.clone()
     }
 
-    /// add one suf to the list of allowed suffixes
+    /// add one suf to the list of allowed suffixes,
     /// only files with one of these suffixes will be listed
+    ///
     /// e.g. suf("rs") will allow files with rs suffix to be listed
+    ///
     /// notice that exts function will shadow the previous sufs
+    ///
     /// e.g. suf(".rs").ext("toml") will only allow files with .rs and .toml extensions to be listed
+    ///
     /// e.g. suf(".rs").suf(".toml") will only allow files with .toml extensions to be listed
+    ///
     /// e.g. suf("rs").exts(vec!["toml"]) will only allow files with .toml extensions to be listed
     pub fn suf(&mut self, suf: &str) -> Self {
         self.sufs.push(suf.to_string());
