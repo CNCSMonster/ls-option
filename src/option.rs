@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{ffi::OsStr, path::Path};
 
 #[derive(Clone, Debug)]
 pub struct ListOption {
@@ -141,121 +141,91 @@ impl ListOption {
     /// if the path is a file, it will be listed if it matches the options set in the ListOption
     ///
     /// if the path is a directory, all files and directories in it will be listed if they match the options set in the ListOption
-    pub fn list(&self, path: &str) -> Vec<String> {
-        // check if is a file
-        let path = Path::new(path);
-        // check if exists
-        if !path.exists() {
-            return Vec::new();
-        }
+    pub fn list<S>(&self, path: &S) -> Vec<String>
+    where
+        S: AsRef<OsStr> + ?Sized,
+    {
         let mut ret: Vec<String> = Vec::new();
+        if self.level == 0 {
+            return ret;
+        }
+        let path = Path::new(path);
+        if self.would_show(path) {
+            ret.push(path.to_str().unwrap().to_string());
+        }
         if path.is_file() {
-            if self.file && self.check_if_show_file(path.to_str().unwrap()) {
-                ret.push(path.to_str().unwrap().to_string());
-            }
-        } else if path.is_dir() {
-            // list all files
-            let files = path.read_dir().unwrap();
-            for file in files {
-                let file = file.unwrap();
-                let file_path = file.path();
-                if file_path.is_dir() {
-                    let next_level = if self.recursive {
-                        self.level
-                    } else {
-                        self.level - 1
-                    };
-                    let sub_opt = ListOption {
-                        level: next_level,
-                        ..self.clone()
-                    };
-                    let sub_dir = file_path.to_str().unwrap();
-                    if self.dir {
-                        ret.push(sub_dir.to_string());
-                    }
-                    if sub_opt.check_if_list_dir(sub_dir) {
-                        let sub_list = sub_opt.inner_list(file_path.to_str().unwrap());
-                        ret.extend(sub_list);
-                    }
-                } else if file_path.is_file() {
-                    let file_name = file_path.to_str().unwrap();
-                    if self.check_if_show_file(file_name) {
-                        ret.push(file_name.to_string());
-                    }
+            return ret;
+        }
+        if path.is_dir() {
+            // if is a directory, list all files and directories in it
+            for entry in path.read_dir().unwrap() {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                let mut sub_option = self.clone();
+                if !self.recursive {
+                    sub_option.level = if self.level == 0 { 0 } else { self.level - 1 };
                 }
+                if self.would_show(&path) {
+                    ret.push(path.to_str().unwrap().to_string());
+                }
+                ret.extend(sub_option.inner_list(&path));
             }
         }
         ret
     }
-    // Checks if a file should be shown based on the options set in the ListOption
-    fn check_if_show_file(&self, file_path: &str) -> bool {
-        let base_name = Path::new(file_path).file_name().unwrap().to_str().unwrap();
-        // dbg!(file_path);
-        // dbg!(self.sufs.is_empty() || self.sufs.iter().any(|suf| base_name.ends_with(suf)));
-        // dbg!(&self.sufs);
-        self.file
-            && (self.sufs.is_empty() || self.sufs.iter().any(|suf| base_name.ends_with(suf)))
-            && (self.hidden && base_name.starts_with('.')
-                || self.unhidden && !base_name.starts_with('.'))
-    }
-    // Checks if a directory should be listed based on the options set in the ListOption
-    fn check_if_list_dir(&self, dir_path: &str) -> bool {
-        let dir_path = Path::new(dir_path).canonicalize().unwrap();
-        let base_name = dir_path
-            .file_name()
-            .unwrap_or_else(|| panic!("{:?}", dir_path))
-            .to_str()
-            .unwrap();
-        (self.level > 0 || self.recursive)
-            && (self.hidden && base_name.starts_with('.')
-                || self.unhidden && !base_name.starts_with('.'))
-    }
-
-    // Lists the files and directories at the given path according to the options set in the ListOption, used for recursive listing
-    fn inner_list(&self, path: &str) -> Vec<String> {
-        // check if is a file
-        let path = Path::new(path);
-        // check if exists
-        if !path.exists() {
-            return Vec::new();
-        }
+    fn inner_list(&self, path: &Path) -> Vec<String> {
         let mut ret: Vec<String> = Vec::new();
-        if path.is_file() {
-            if self.file && self.check_if_show_file(path.to_str().unwrap()) {
-                ret.push(path.to_str().unwrap().to_string());
-            }
-        } else if path.is_dir() && self.check_if_list_dir(path.to_str().unwrap()) {
-            // list all files
-            let files = path.read_dir().unwrap();
-            for file in files {
-                let file = file.unwrap();
-                let file_path = file.path();
-                if file_path.is_dir() {
-                    let next_level = if self.recursive {
-                        self.level
-                    } else {
-                        self.level - 1
-                    };
-                    let sub_opt = ListOption {
-                        level: next_level,
-                        ..self.clone()
-                    };
-                    let sub_dir = file_path.to_str().unwrap();
-                    if self.dir {
-                        ret.push(sub_dir.to_string());
-                    }
-                    if sub_opt.check_if_list_dir(sub_dir) {
-                        let sub_list = sub_opt.inner_list(file_path.to_str().unwrap());
-                        ret.extend(sub_list);
-                    }
-                } else if file_path.is_file() {
-                    let file_name = file_path.to_str().unwrap();
-                    if self.check_if_show_file(file_name) {
-                        ret.push(file_name.to_string());
-                    }
+        if self.level == 0 {
+            return ret;
+        }
+        if path.is_dir() {
+            // if is a directory, list all files and directories in it
+            for entry in path.read_dir().unwrap() {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                let mut sub_option = self.clone();
+                if !self.recursive {
+                    sub_option.level = if self.level == 0 { 0 } else { self.level - 1 };
                 }
+                if self.would_show(&path) {
+                    ret.push(path.to_str().unwrap().to_string());
+                }
+                ret.extend(sub_option.inner_list(&path));
             }
         }
         ret
+    }
+    pub fn would_show<S>(&self, path: &S) -> bool
+    where
+        S: AsRef<OsStr> + ?Sized,
+    {
+        let check_hidden = |path: &Path| {
+            let base_name = path.file_name().unwrap().to_str().unwrap();
+            if self.hidden && base_name.starts_with('.') {
+                true
+            } else {
+                self.unhidden && !base_name.starts_with('.')
+            }
+        };
+        let check_file_dir =
+            |path: &Path| (path.is_file() && self.file) || (path.is_dir() && self.dir);
+        let check_level = || self.recursive || self.level > 0;
+        let check_ext = |path: &Path| {
+            self.sufs.is_empty()
+                || self
+                    .sufs
+                    .iter()
+                    .any(|suf| path.to_str().unwrap().ends_with(suf))
+        };
+        let path = Path::new(path);
+        if !path.exists() {
+            return false;
+        }
+        let path = &path.canonicalize().unwrap();
+        path.exists()
+            && check_hidden(path)
+            && check_file_dir(path)
+            && check_level()
+            && check_ext(path)
     }
 }
