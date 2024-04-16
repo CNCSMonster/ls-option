@@ -34,40 +34,43 @@ impl Default for ListOption {
 
 /// specify the list option
 impl ListOption {
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// set if allow this option to show directories
-    pub fn dir(&mut self, if_show: bool) -> Self {
+    pub fn dir(&mut self, if_show: bool) -> &mut Self {
         self.dir = if_show;
-        self.clone()
+        self
     }
 
     /// set if allow this option to show files
-    pub fn file(&mut self, if_show: bool) -> Self {
+    pub fn file(&mut self, if_show: bool) -> &mut Self {
         self.file = if_show;
-        self.clone()
+        self
     }
 
     /// set if allow this option to show hidden files
-    pub fn hidden(&mut self, if_show: bool) -> Self {
+    pub fn hidden(&mut self, if_show: bool) -> &mut Self {
         self.hidden = if_show;
-        self.clone()
+        self
     }
 
     /// set if allow this option to show unhidden files
-    pub fn unhidden(&mut self, if_show: bool) -> Self {
+    pub fn unhidden(&mut self, if_show: bool) -> &mut Self {
         self.unhidden = if_show;
-        self.clone()
+        self
     }
 
     /// set the level of recursion while listing files in some path
-    pub fn level(&mut self, level: usize) -> Self {
+    pub fn level(&mut self, level: usize) -> &mut Self {
         self.level = level;
-        self.clone()
+        self
     }
 
     /// set if allow this option to list recursively
-    pub fn recursive(&mut self, if_choose: bool) -> Self {
+    pub fn recursive(&mut self, if_choose: bool) -> &mut Self {
         self.recursive = if_choose;
-        self.clone()
+        self
     }
 
     /// add one ext to the list of allowed extensions
@@ -77,9 +80,9 @@ impl ListOption {
     /// e.g. ext("rs") will allow files with .rs extension to be listed
     ///
     /// e.g. ext("rs").ext("toml") will allow files with .rs and .toml extensions to be listed
-    pub fn ext(&mut self, ext: &str) -> Self {
+    pub fn ext(&mut self, ext: &str) -> &mut Self {
         self.sufs.push(format!(".{}", ext));
-        self.clone()
+        self
     }
 
     /// add multiple exts to the list of allowed extensions
@@ -92,9 +95,9 @@ impl ListOption {
     ///
     /// e.g. exts(vec!["rs"]).exts(vec!["toml"]) will only allow files with .toml extensions to be listed
     ///
-    pub fn exts(&mut self, exts: Vec<&str>) -> Self {
+    pub fn exts(&mut self, exts: Vec<&str>) -> &mut Self {
         self.sufs = exts.iter().map(|s| format!(".{}", s)).collect();
-        self.clone()
+        self
     }
 
     /// add one suf to the list of allowed suffixes,
@@ -109,9 +112,9 @@ impl ListOption {
     /// e.g. suf(".rs").suf(".toml") will only allow files with .toml extensions to be listed
     ///
     /// e.g. suf("rs").exts(vec!["toml"]) will only allow files with .toml extensions to be listed
-    pub fn suf(&mut self, suf: &str) -> Self {
+    pub fn suf(&mut self, suf: &str) -> &mut Self {
         self.sufs.push(suf.to_string());
-        self.clone()
+        self
     }
 
     /// add multiple sufs to the list of allowed suffixes
@@ -128,9 +131,32 @@ impl ListOption {
     ///
     /// e.g. sufs(vec!["rs"]).exts(vec!["toml"]) will only allow files with .toml extensions to be listed
     ///
-    pub fn sufs(&mut self, sufs: Vec<&str>) -> Self {
+    pub fn sufs(&mut self, sufs: Vec<&str>) -> &mut Self {
         self.sufs = sufs.iter().map(|s| s.to_string()).collect();
-        self.clone()
+        self
+    }
+}
+
+impl ListOption {
+    pub fn only_dir(&mut self) -> &mut Self {
+        self.file = false;
+        self.dir = true;
+        self
+    }
+    pub fn only_file(&mut self) -> &mut Self {
+        self.file = true;
+        self.dir = false;
+        self
+    }
+    pub fn only_hidden(&mut self) -> &mut Self {
+        self.hidden = true;
+        self.unhidden = false;
+        self
+    }
+    pub fn only_unhidden(&mut self) -> &mut Self {
+        self.hidden = false;
+        self.unhidden = true;
+        self
     }
 }
 
@@ -195,6 +221,8 @@ impl ListOption {
         }
         ret
     }
+
+    /// check if the path would be shown according to the options set in the ListOption
     pub fn would_show<S>(&self, path: &S) -> bool
     where
         S: AsRef<OsStr> + ?Sized,
